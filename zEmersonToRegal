@@ -1,0 +1,109 @@
+Sub LoopAllExcelFilesInFolder()
+
+'PURPOSE: To loop through all Excel files in a user specified folder and perform a set task on them
+'SOURCE: www.TheSpreadsheetGuru.com
+
+Dim doc As Document
+Dim myPath As String
+Dim myFile As String
+Dim myExtension As String
+Dim FldrPicker As FileDialog
+Dim hdr As HeaderFooter
+Dim wb As Word.Application
+    
+    Set wb = CreateObject("word.application")
+
+'Optimize Macro Speed
+  Application.ScreenUpdating = False
+ 
+  'Application.Calculation = xlCalculationManual
+
+'Retrieve Target Folder Path From User
+Beginning:
+  Set FldrPicker = Application.FileDialog(msoFileDialogFolderPicker)
+
+    With FldrPicker
+      .Title = "Select A Target Folder"
+      .AllowMultiSelect = False
+        If .Show <> -1 Then GoTo NextCode
+        myPath = .SelectedItems(1) & "\"
+    End With
+
+'In Case of Cancel
+NextCode:
+  myPath = myPath
+  If myPath = "" Then GoTo ResetSettings
+
+'Target File Extension (must include wildcard "*")
+  myExtension = "*.docx"
+
+'Target Path with Ending Extention
+  myFile = Dir(myPath & myExtension)
+  
+  
+'Get Header from main document
+    If ActiveWindow.View.SplitSpecial <> wdPaneNone Then
+        ActiveWindow.Panes(2).Close
+    End If
+    If ActiveWindow.ActivePane.View.Type = wdNormalView Or ActiveWindow. _
+        ActivePane.View.Type = wdOutlineView Then
+        ActiveWindow.ActivePane.View.Type = wdPrintView
+    End If
+    ActiveWindow.ActivePane.View.SeekView = wdSeekCurrentPageHeader
+    Selection.WholeStory
+    Selection.MoveLeft Unit:=wdCharacter, Count:=1, Extend:=wdExtend
+    Selection.Copy
+    ActiveWindow.ActivePane.View.SeekView = wdSeekMainDocument
+
+'Loop through each Excel file in folder
+  Do While myFile <> ""
+    'Set variable equal to opened document
+      Set doc = Documents.Open(FileName:=myPath & myFile)
+    
+    'Do the script
+        With doc
+    '             '*Change the directory to YOUR folder's path
+    '            .Documents.Open ("C:\Users\raanderson\Desktop\Test Script\" & Fname)
+                For Each hdr In ActiveDocument.Sections(1).Headers
+                   hdr.Range.Text = vbNullString
+                Next hdr
+                
+                If .ActiveWindow.View.SplitSpecial = wdPaneNone Then
+                    .ActiveWindow.ActivePane.View.Type = wdPrintView
+                Else
+                    .ActiveWindow.View.Type = wdPrintView
+                End If
+
+                    .ActiveWindow.ActivePane.View.SeekView = wdSeekCurrentPageHeader
+                    
+                    Selection.delete Unit:=wdCharacter, Count:=1
+                    Selection.delete Unit:=wdCharacter, Count:=1
+                    Selection.delete Unit:=wdCharacter, Count:=1
+                    
+                    .ActiveWindow.ActivePane.Selection.Paste
+            End With
+                Selection.delete Unit:=wdCharacter, Count:=1
+
+
+        
+   ' Save and Close Workbook
+      doc.Close SaveChanges:=True
+
+    'Get next file name
+      myFile = Dir
+  Loop
+
+'Message Box when tasks are completed
+  MsgBox "Task Complete!"
+  'GoTo Beginning
+
+ResetSettings:
+  'Reset Macro Optimization Settings
+   
+    'Application.Calculation = xlCalculationAutomatic
+    Application.ScreenUpdating = True
+
+End Sub
+    
+
+
